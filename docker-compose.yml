@@ -1,0 +1,32 @@
+version: "3"
+
+networks:
+  default:
+    external:
+      name: network
+
+services:
+  mysql_db:
+    container_name: "mysql_db"
+    build: ./docker/mysql
+    tty: true
+    environment:
+      MYSQL_DATABASE: requests_db
+      MYSQL_USER: dev
+      MYSQL_PASSWORD: 123
+      MYSQL_ROOT_PASSWORD: 123
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/mysql/initdb.d:/docker-entrypoint-initdb.d
+      - ./log/mysql:/var/log/mysql
+
+  fastapi:
+    links:
+      - mysql_db
+    container_name: "fastapi"
+    build: ./docker/fastapi
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/usr/src/server

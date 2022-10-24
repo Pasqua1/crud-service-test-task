@@ -1,0 +1,7 @@
+mysqlclient
+Flask-SQLAlchemy
+sqlalchemy
+pymysql
+uvicorn
+fastapi
+databases
