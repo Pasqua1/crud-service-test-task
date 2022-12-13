@@ -1,36 +1,53 @@
 from typing import List
+
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+from fastapi import HTTPException
 
 from model import Request, RequestTable
 
 def get_request(db: Session, record_id: str) -> RequestTable:
-    return db.query(RequestTable).filter(RequestTable.record_id == record_id).first()
+    try:
+        db_request = db.query(RequestTable).filter(RequestTable.record_id == record_id).first()
+    except Exception as exp:
+        raise HTTPException(status_code=503, detail=str(exp))
+    return db_request
 
 def create_request(db: Session, request: Request):
-    db_request: RequestTable = RequestTable(record_id = request.record_id,
-                             record = request.record,
-                             count = request.count)
-    db.add(db_request)
-    db.commit()
-    db.refresh(db_request)
+    try:
+        db_request: RequestTable = RequestTable(record_id = request.record_id,
+                                record = request.record,
+                                count = request.count)
+        db.add(db_request)
+        db.commit()
+        db.refresh(db_request)
+    except Exception as exp:
+        raise HTTPException(status_code=503, detail=str(exp))
     return db_request
 
 def update_request(db: Session, request: RequestTable):
-    db.add(request)
-    db.commit()
-    db.refresh(request)
+    try:
+        db.add(request)
+        db.commit()
+        db.refresh(request)
+    except Exception as exp:
+        raise HTTPException(status_code=503, detail=str(exp))
     return request
 
 def delete_request(db: Session, request: RequestTable):
-    db.delete(request)
-    db.commit()
+    try:
+        db.delete(request)
+        db.commit()
+    except Exception as exp:
+        raise HTTPException(status_code=503, detail=str(exp))
 
 def get_statistics(db: Session):
-    requests: List[RequestTable] = db.query(RequestTable).filter(RequestTable.count > 0).all()
-    request_count: int = 0
-    unique_request_count: int = 0
-    for request in requests:
-        request_count += request.count
-        unique_request_count += 1
-    duplicates_percentage: float = (1 - unique_request_count/request_count)*100
-    return round(duplicates_percentage, 2)
+    try:
+        raws: int = db.query(RequestTable).count()
+        if raws == 0:
+            return {"duplicates_percentage": 0}
+        duplicates = db.query(func.sum(RequestTable.count)).scalar()
+        duplicates_percentage: float = (duplicates-raws)/duplicates
+    except Exception as exp:
+        raise HTTPException(status_code=503, detail=str(exp))
+    return {"duplicates_percentage":round(duplicates_percentage, 2)}

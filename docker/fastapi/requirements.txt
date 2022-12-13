@@ -5,3 +5,4 @@ pymysql
 uvicorn
 fastapi
 databases
+cryptography
